@@ -24,7 +24,8 @@ func (m *GossipDelegate) Update(data []byte) {
     m.mu.Lock()
     defer m.mu.Unlock()
 
-    m.state = data
+    fmt.Printf("Update meta :%v\n", string(data))
+    m.meta = data
 }
 
 func (m *GossipDelegate) NodeMeta(limit int) []byte {

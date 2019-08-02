@@ -10,17 +10,19 @@ import (
     "fmt"
     "io"
     "net/http"
+    "peento/cluster"
     "peento/config"
-    "peento/core"
     "time"
 )
 
 type process struct {
-    delegate *core.GossipDelegate
+    c cluster.Cluster
 }
 
-func HttpStartup(conf *config.Config) (io.Closer, error) {
-    p := process{conf.Delegate}
+func HttpStartup(conf *config.Config, c cluster.Cluster) (io.Closer, error) {
+    p := process{
+        c: c,
+    }
     http.HandleFunc("/api/", p.process)
     //设置访问的ip和端口
     s := &http.Server{
@@ -39,7 +41,8 @@ func HttpStartup(conf *config.Config) (io.Closer, error) {
 
 func (p *process) process(resp http.ResponseWriter, req *http.Request) {
     data := getKey(req)
-    p.delegate.Update([]byte(data))
+    //p.delegate.Update([]byte(data))
+    p.c.UpdateLocal([]byte(data))
     io.WriteString(resp, "ok")
 }
 

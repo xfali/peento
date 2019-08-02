@@ -8,22 +8,33 @@ package cluster
 
 import (
     "github.com/hashicorp/memberlist"
-    "io"
     "os"
     "peento/config"
     "strconv"
+    "time"
 )
 
-type Closable memberlist.Memberlist
+type members memberlist.Memberlist
 
-func Startup(conf *config.Config) (io.Closer, error) {
+type Cluster interface {
+    UpdateLocal(meta []byte) error
+    UpdateAndWait(meta []byte, timeout time.Duration) error
+    Close() error
+}
+
+func Startup(conf *config.Config) (Cluster, error) {
     hostname, _ := os.Hostname()
     config := memberlist.DefaultLocalConfig()
     config.Name = hostname + "-" + strconv.Itoa(conf.Port)
     // config := memberlist.DefaultLocalConfig()
     config.BindPort = conf.Port
     config.AdvertisePort = conf.Port
-    config.Delegate = conf.Delegate
+    if conf.Delegate != nil {
+        config.Delegate = conf.Delegate
+    }
+    if conf.EventDelegate != nil {
+        config.Events = conf.EventDelegate
+    }
 
     list, err := memberlist.Create(config)
     if err != nil {
@@ -34,10 +45,19 @@ func Startup(conf *config.Config) (io.Closer, error) {
         list.Join(conf.Members)
     }
 
-    return (*Closable)(list), nil
+    return (*members)(list), nil
 }
 
-func (c *Closable) Close() error {
+func (c *members) UpdateLocal(meta []byte) error {
+    (*memberlist.Memberlist)(c).LocalNode().Meta = meta
+    return nil
+}
+
+func (c *members) UpdateAndWait(meta []byte, timeout time.Duration) error {
+    (*memberlist.Memberlist)(c).LocalNode().Meta = meta
+    return (*memberlist.Memberlist)(c).UpdateNode(timeout)
+}
+
+func (c *members) Close() error {
     return (*memberlist.Memberlist)(c).Shutdown()
 }
-

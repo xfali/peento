@@ -9,8 +9,9 @@ package config
 import "peento/core"
 
 type Config struct {
-    Port     int
-    Members  []string
-    ApiPort  int
-    Delegate *core.GossipDelegate
+    Port          int
+    Members       []string
+    ApiPort       int
+    Delegate      *core.GossipDelegate
+    EventDelegate *core.NodeDelegate
 }

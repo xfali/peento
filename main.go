@@ -36,16 +36,17 @@ func main() {
             conf.Members = append(conf.Members, mem)
         }
     }
-    conf.Delegate = &core.GossipDelegate{}
+    //conf.Delegate = &core.GossipDelegate{}
+    conf.EventDelegate = core.DefaultNodeDelegate()
 
     var closers []io.Closer
-    c1, err1 := cluster.Startup(conf)
+    cluster, err1 := cluster.Startup(conf)
     if err1 != nil {
         log.Fatal(err1)
     }
-    closers = append(closers, c1)
+    closers = append(closers, cluster)
 
-    c2, err2 := api.HttpStartup(conf)
+    c2, err2 := api.HttpStartup(conf, cluster)
     if err2 != nil {
         closeAll(closers)
         log.Fatal(err2)
